@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/dujiao-next/internal/logger"
 	"github.com/dujiao-next/internal/models"
@@ -39,6 +40,7 @@ func (c *Consumer) Register(mux *asynq.ServeMux) {
 	mux.HandleFunc(queue.TaskOrderTimeoutCancel, c.handleOrderTimeoutCancel)
 	mux.HandleFunc(queue.TaskWalletRechargeExpire, c.handleWalletRechargeExpire)
 	mux.HandleFunc(queue.TaskNotificationDispatch, c.handleNotificationDispatch)
+	mux.HandleFunc(queue.TaskAffiliateConfirmCommissions, c.handleAffiliateConfirmCommissions)
 }
 
 func (c *Consumer) handleOrderStatusEmail(_ context.Context, task *asynq.Task) error {
@@ -255,6 +257,18 @@ func (c *Consumer) handleNotificationDispatch(ctx context.Context, task *asynq.T
 			"biz_id", payload.BizID,
 			"error", err,
 		)
+		return err
+	}
+	return nil
+}
+
+func (c *Consumer) handleAffiliateConfirmCommissions(_ context.Context, _ *asynq.Task) error {
+	if c == nil || c.AffiliateService == nil {
+		logger.Debugw("worker_affiliate_confirm_skip_nil", "consumer_nil", c == nil)
+		return nil
+	}
+	if err := c.AffiliateService.ConfirmDueCommissions(time.Now()); err != nil {
+		logger.Warnw("worker_affiliate_confirm_due_failed", "error", err)
 		return err
 	}
 	return nil

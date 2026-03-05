@@ -19,6 +19,8 @@ const (
 	TaskWalletRechargeExpire = constants.TaskWalletRechargeExpire
 	// TaskNotificationDispatch 通知中心分发任务
 	TaskNotificationDispatch = constants.TaskNotificationDispatch
+	// TaskAffiliateConfirmCommissions 佣金到期确认任务
+	TaskAffiliateConfirmCommissions = constants.TaskAffiliateConfirmCommissions
 )
 
 // OrderStatusEmailPayload 订单状态邮件任务载荷
@@ -95,4 +97,9 @@ func NewNotificationDispatchTask(payload NotificationDispatchPayload) (*asynq.Ta
 		return nil, err
 	}
 	return asynq.NewTask(TaskNotificationDispatch, body), nil
+}
+
+// NewAffiliateConfirmCommissionsTask 创建佣金到期确认任务
+func NewAffiliateConfirmCommissionsTask() *asynq.Task {
+	return asynq.NewTask(TaskAffiliateConfirmCommissions, nil)
 }

@@ -274,12 +274,13 @@ const (
 
 // 队列常量
 const (
-	QueueDefault             = "default"
-	TaskOrderStatusEmail     = "order:status_email"
-	TaskOrderAutoFulfill     = "order:auto_fulfill"
-	TaskOrderTimeoutCancel   = "order:timeout_cancel"
-	TaskWalletRechargeExpire = "wallet_recharge:timeout_expire"
-	TaskNotificationDispatch = "notification:dispatch"
+	QueueDefault                    = "default"
+	TaskOrderStatusEmail            = "order:status_email"
+	TaskOrderAutoFulfill            = "order:auto_fulfill"
+	TaskOrderTimeoutCancel          = "order:timeout_cancel"
+	TaskWalletRechargeExpire        = "wallet_recharge:timeout_expire"
+	TaskNotificationDispatch        = "notification:dispatch"
+	TaskAffiliateConfirmCommissions = "affiliate:confirm_commissions"
 )
 
 // 缓存默认配置常量

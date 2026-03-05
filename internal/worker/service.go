@@ -3,7 +3,6 @@ package worker
 import (
 	"context"
 	"errors"
-	"time"
 
 	"github.com/dujiao-next/internal/config"
 	"github.com/dujiao-next/internal/logger"
@@ -12,16 +11,13 @@ import (
 	"github.com/hibiken/asynq"
 )
 
-const (
-	affiliateConfirmInterval = time.Minute
-)
-
 // Service 异步队列服务
 type Service struct {
-	name     string
-	server   *asynq.Server
-	mux      *asynq.ServeMux
-	consumer *Consumer
+	name      string
+	server    *asynq.Server
+	mux       *asynq.ServeMux
+	scheduler *asynq.Scheduler
+	consumer  *Consumer
 }
 
 // NewService 创建异步队列服务
@@ -36,12 +32,33 @@ func NewService(cfg *config.QueueConfig, consumer *Consumer) (*Service, error) {
 	server := asynq.NewServer(opt, serverCfg)
 	mux := asynq.NewServeMux()
 	consumer.Register(mux)
+
+	scheduler := asynq.NewScheduler(opt, nil)
+	registerPeriodicTasks(scheduler, consumer)
+
 	return &Service{
-		name:     "worker",
-		server:   server,
-		mux:      mux,
-		consumer: consumer,
+		name:      "worker",
+		server:    server,
+		mux:       mux,
+		scheduler: scheduler,
+		consumer:  consumer,
 	}, nil
+}
+
+// registerPeriodicTasks 注册所有周期性任务
+func registerPeriodicTasks(scheduler *asynq.Scheduler, consumer *Consumer) {
+	if scheduler == nil || consumer == nil {
+		return
+	}
+	if consumer.AffiliateService != nil {
+		task := queue.NewAffiliateConfirmCommissionsTask()
+		entryID, err := scheduler.Register("@every 1m", task, asynq.Queue(queue.DefaultQueue))
+		if err != nil {
+			logger.Warnw("scheduler_register_affiliate_confirm_failed", "error", err)
+		} else {
+			logger.Infow("scheduler_register_affiliate_confirm_ok", "entry_id", entryID)
+		}
+	}
 }
 
 // Name 服务名称
@@ -57,8 +74,10 @@ func (s *Service) Start(ctx context.Context) error {
 	if s == nil || s.server == nil || s.mux == nil {
 		return errors.New("worker not initialized")
 	}
-	if s.consumer != nil && s.consumer.AffiliateService != nil {
-		go s.runAffiliateConfirmLoop(ctx)
+	if s.scheduler != nil {
+		if err := s.scheduler.Start(); err != nil {
+			logger.Warnw("scheduler_start_failed", "error", err)
+		}
 	}
 	return s.server.Run(s.mux)
 }
@@ -69,29 +88,9 @@ func (s *Service) Stop(ctx context.Context) error {
 		return nil
 	}
 	_ = ctx
+	if s.scheduler != nil {
+		s.scheduler.Shutdown()
+	}
 	s.server.Shutdown()
 	return nil
-}
-
-func (s *Service) runAffiliateConfirmLoop(ctx context.Context) {
-	if s == nil || s.consumer == nil || s.consumer.AffiliateService == nil {
-		return
-	}
-	runOnce := func() {
-		if err := s.consumer.AffiliateService.ConfirmDueCommissions(time.Now()); err != nil {
-			logger.Warnw("worker_affiliate_confirm_due_failed", "error", err)
-		}
-	}
-	runOnce()
-
-	ticker := time.NewTicker(affiliateConfirmInterval)
-	defer ticker.Stop()
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-ticker.C:
-			runOnce()
-		}
-	}
 }
