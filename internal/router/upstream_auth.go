@@ -94,24 +94,6 @@ func UpstreamAPIAuthMiddleware(credRepo repository.ApiCredentialRepository) gin.
 	}
 }
 
-// GetUpstreamUserID 从 context 获取上游 API 认证的用户 ID
-func GetUpstreamUserID(c *gin.Context) uint {
-	v, _ := c.Get(upstreamUserIDKey)
-	if id, ok := v.(uint); ok {
-		return id
-	}
-	return 0
-}
-
-// GetUpstreamCredentialID 从 context 获取上游 API 凭证 ID
-func GetUpstreamCredentialID(c *gin.Context) uint {
-	v, _ := c.Get(upstreamCredentialIDKey)
-	if id, ok := v.(uint); ok {
-		return id
-	}
-	return 0
-}
-
 // bodyReader 实现 io.Reader，用于重置 body
 type bodyReader struct {
 	data   []byte
@@ -125,23 +107,4 @@ func (r *bodyReader) Read(p []byte) (n int, err error) {
 	n = copy(p, r.data[r.offset:])
 	r.offset += n
 	return n, nil
-}
-
-// UpstreamCallbackResponse 上游回调响应
-func UpstreamCallbackResponse(c *gin.Context, ok bool, msg string) {
-	c.JSON(http.StatusOK, gin.H{"ok": ok, "message": msg})
-}
-
-// UpstreamSuccessResponse 上游 API 成功响应
-func UpstreamSuccessResponse(c *gin.Context, data interface{}) {
-	if data == nil {
-		c.JSON(http.StatusOK, gin.H{"ok": true})
-		return
-	}
-	c.JSON(http.StatusOK, data)
-}
-
-// UpstreamErrorResponse 上游 API 错误响应
-func UpstreamErrorResponse(c *gin.Context, httpStatus int, errorCode, errorMessage string) {
-	c.JSON(httpStatus, gin.H{"ok": false, "error_code": errorCode, "error_message": errorMessage})
 }
