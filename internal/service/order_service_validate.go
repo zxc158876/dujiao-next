@@ -243,17 +243,6 @@ func normalizeGuestEmail(raw string) (string, error) {
 	return normalized, nil
 }
 
-func normalizeAffiliateCode(raw string) string {
-	code := strings.TrimSpace(raw)
-	if code == "" {
-		return ""
-	}
-	if len(code) > 32 {
-		return code[:32]
-	}
-	return code
-}
-
 func (s *OrderService) resolveExpireMinutes() int {
 	return resolveOrderPaymentExpireMinutes(s.settingService, s.expireMinutes)
 }
@@ -403,13 +392,4 @@ func fillOrdersItemsFromChildren(orders []models.Order) {
 	for i := range orders {
 		fillOrderItemsFromChildren(&orders[i])
 	}
-}
-
-// normalizeOrderAmount 归一化金额精度与下限
-func normalizeOrderAmount(amount decimal.Decimal) decimal.Decimal {
-	normalized := amount.Round(2)
-	if normalized.LessThan(decimal.Zero) {
-		return decimal.Zero
-	}
-	return normalized
 }

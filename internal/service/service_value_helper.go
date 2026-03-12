@@ -2,10 +2,13 @@ package service
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/dujiao-next/internal/constants"
 	"github.com/dujiao-next/internal/models"
 	"github.com/dujiao-next/internal/repository"
+
+	"github.com/shopspring/decimal"
 )
 
 // resolveServiceSiteCurrency 统一解析服务层使用的站点币种配置。
@@ -75,4 +78,25 @@ func resolveProductOrderSKU(productSKURepo repository.ProductSKURepository, prod
 // buildOrderItemKey 构建商品与 SKU 的组合键。
 func buildOrderItemKey(productID, skuID uint) string {
 	return fmt.Sprintf("%d:%d", productID, skuID)
+}
+
+// normalizeAffiliateCode 统一归一化推广码输入。
+func normalizeAffiliateCode(raw string) string {
+	code := strings.TrimSpace(raw)
+	if code == "" {
+		return ""
+	}
+	if len(code) > 32 {
+		return code[:32]
+	}
+	return code
+}
+
+// normalizeOrderAmount 归一化金额精度与下限。
+func normalizeOrderAmount(amount decimal.Decimal) decimal.Decimal {
+	normalized := amount.Round(2)
+	if normalized.LessThan(decimal.Zero) {
+		return decimal.Zero
+	}
+	return normalized
 }
