@@ -272,3 +272,18 @@ func (h *Handler) SetUserMemberLevel(c *gin.Context) {
 
 	response.Success(c, gin.H{"updated": true})
 }
+
+// BackfillMemberLevels POST /admin/member-levels/backfill — 为所有未分配等级的老用户批量分配默认等级
+func (h *Handler) BackfillMemberLevels(c *gin.Context) {
+	affected, err := h.MemberLevelService.BackfillDefaultLevel()
+	if err != nil {
+		switch {
+		case errors.Is(err, service.ErrMemberLevelNotFound):
+			shared.RespondError(c, response.CodeBadRequest, "error.member_level_no_default", nil)
+		default:
+			shared.RespondError(c, response.CodeInternal, "error.member_level_backfill_failed", err)
+		}
+		return
+	}
+	response.Success(c, gin.H{"affected": affected})
+}

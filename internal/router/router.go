@@ -348,6 +348,7 @@ func SetupRouter(cfg *config.Config, c *provider.Container) *gin.Engine {
 				authorized.GET("/member-level-prices", adminHandler.GetMemberLevelPrices)
 				authorized.POST("/member-level-prices/batch", adminHandler.BatchUpsertMemberLevelPrices)
 				authorized.DELETE("/member-level-prices/:id", adminHandler.DeleteMemberLevelPrice)
+				authorized.POST("/member-levels/backfill", adminHandler.BackfillMemberLevels)
 
 				// 支付渠道与支付记录
 				authorized.POST("/payment-channels", adminHandler.CreatePaymentChannel)

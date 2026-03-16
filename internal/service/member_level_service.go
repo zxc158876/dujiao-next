@@ -294,3 +294,15 @@ func (s *MemberLevelService) SetUserLevel(userID, levelID uint) error {
 	user.MemberLevelID = levelID
 	return s.userRepo.Update(user)
 }
+
+// BackfillDefaultLevel 为所有未分配等级的老用户批量分配默认等级，返回影响行数
+func (s *MemberLevelService) BackfillDefaultLevel() (int64, error) {
+	defaultLevel, err := s.levelRepo.GetDefault()
+	if err != nil {
+		return 0, err
+	}
+	if defaultLevel == nil {
+		return 0, ErrMemberLevelNotFound
+	}
+	return s.userRepo.AssignDefaultMemberLevel(defaultLevel.ID)
+}

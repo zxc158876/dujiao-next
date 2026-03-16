@@ -20,6 +20,7 @@ type UserRepository interface {
 	Update(user *models.User) error
 	List(filter UserListFilter) ([]models.User, int64, error)
 	BatchUpdateStatus(userIDs []uint, status string) error
+	AssignDefaultMemberLevel(defaultLevelID uint) (int64, error)
 }
 
 // GormUserRepository GORM 实现
@@ -142,4 +143,18 @@ func (r *GormUserRepository) BatchUpdateStatus(userIDs []uint, status string) er
 		updates["token_version"] = gorm.Expr("token_version + 1")
 	}
 	return r.db.Model(&models.User{}).Where("id IN ?", userIDs).Updates(updates).Error
+}
+
+// AssignDefaultMemberLevel 为所有未分配等级(member_level_id=0)的用户批量分配默认等级
+func (r *GormUserRepository) AssignDefaultMemberLevel(defaultLevelID uint) (int64, error) {
+	if defaultLevelID == 0 {
+		return 0, nil
+	}
+	result := r.db.Model(&models.User{}).
+		Where("member_level_id = 0 OR member_level_id IS NULL").
+		Updates(map[string]interface{}{
+			"member_level_id": defaultLevelID,
+			"updated_at":      time.Now(),
+		})
+	return result.RowsAffected, result.Error
 }
