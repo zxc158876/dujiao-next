@@ -16,6 +16,8 @@ var DB *gorm.DB
 
 const (
 	manualStockRemainingMigrationSettingKey = "migration/manual_stock_remaining_v1"
+	skuMigrationSettingKey                  = "migration/product_sku_v1"
+	categoryParentMigrationSettingKey       = "migration/category_parent_v1"
 	manualStockUnlimitedValue               = -1
 )
 

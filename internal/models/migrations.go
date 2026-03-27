@@ -84,9 +84,20 @@ func migrateCartSKUUniqueIndex() error {
 }
 
 // ensureProductSKUMigration 执行 SKU 迁移：补默认 SKU、回填 sku_id、完整性校验。
+// 迁移完成后写入幂等标记，后续启动跳过。
 func ensureProductSKUMigration() error {
 	if DB == nil {
 		return errors.New("database is not initialized")
+	}
+
+	// 检查迁移标记，已完成则跳过
+	var marker Setting
+	if err := DB.First(&marker, "key = ?", skuMigrationSettingKey).Error; err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return err
+		}
+	} else if migrationDone(marker.ValueJSON) {
+		return nil
 	}
 
 	if err := ensureDefaultProductSKUs(); err != nil {
@@ -102,7 +113,19 @@ func ensureProductSKUMigration() error {
 		return err
 	}
 
-	return validateSKUMigrationIntegrity()
+	if err := validateSKUMigrationIntegrity(); err != nil {
+		return err
+	}
+
+	// 迁移完成，写入标记
+	doneMarker := Setting{
+		Key: skuMigrationSettingKey,
+		ValueJSON: JSON{
+			"done":        true,
+			"migrated_at": time.Now().UTC().Format(time.RFC3339),
+		},
+	}
+	return DB.Save(&doneMarker).Error
 }
 
 // ensureDefaultProductSKUs 为每个历史商品补一条 DEFAULT SKU。
@@ -305,8 +328,29 @@ func ensureCategoryParentMigration() error {
 	if DB == nil {
 		return errors.New("database is not initialized")
 	}
+
+	var marker Setting
+	if err := DB.First(&marker, "key = ?", categoryParentMigrationSettingKey).Error; err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return err
+		}
+	} else if migrationDone(marker.ValueJSON) {
+		return nil
+	}
+
 	if !DB.Migrator().HasColumn(&Category{}, "parent_id") {
 		return nil
 	}
-	return DB.Model(&Category{}).Where("parent_id IS NULL").Update("parent_id", 0).Error
+	if err := DB.Model(&Category{}).Where("parent_id IS NULL").Update("parent_id", 0).Error; err != nil {
+		return err
+	}
+
+	doneMarker := Setting{
+		Key: categoryParentMigrationSettingKey,
+		ValueJSON: JSON{
+			"done":        true,
+			"migrated_at": time.Now().UTC().Format(time.RFC3339),
+		},
+	}
+	return DB.Save(&doneMarker).Error
 }
