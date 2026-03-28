@@ -386,6 +386,8 @@ const (
 	SettingFieldSiteCurrency           = "currency"
 	SettingFieldPaymentExpireMinutes   = "payment_expire_minutes"
 
+	SettingKeyNavConfig = "nav_config"
+
 	SettingKeyRegistrationConfig         = "registration_config"
 	SettingFieldRegistrationEnabled      = "registration_enabled"
 	SettingFieldEmailVerificationEnabled = "email_verification_enabled"

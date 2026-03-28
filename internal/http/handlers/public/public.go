@@ -151,6 +151,17 @@ func (h *Handler) GetConfig(c *gin.Context) {
 	data["registration_enabled"] = registrationEnabled
 	data["email_verification_enabled"] = emailVerificationEnabled
 
+	// 导航配置
+	navConfigVal, _ := h.SettingService.GetByKey(constants.SettingKeyNavConfig)
+	if navConfigVal != nil {
+		data["nav_config"] = navConfigVal
+	} else {
+		data["nav_config"] = map[string]interface{}{
+			"builtin":      map[string]interface{}{"blog": true, "notice": true, "about": true},
+			"custom_items": make([]interface{}, 0),
+		}
+	}
+
 	_ = cache.SetJSON(c.Request.Context(), publicConfigCacheKey, data, publicConfigCacheTTL)
 	data["server_time"] = time.Now().UnixMilli()
 	response.Success(c, data)

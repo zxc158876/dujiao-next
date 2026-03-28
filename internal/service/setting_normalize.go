@@ -20,6 +20,10 @@ const (
 	settingSiteFooterLinksMaxCount       = 20
 	settingSiteFooterLinkNameMaxRuneSize = 120
 	settingSiteFooterLinkURLMaxRuneSize  = 2000
+
+	settingNavCustomItemsMaxCount        = 10
+	settingNavCustomItemTitleMaxRuneSize = 120
+	settingNavCustomItemURLMaxRuneSize   = 2000
 )
 
 // normalizeSettingValueByKey 按设置键执行归一化，避免非法值入库。
@@ -42,6 +46,8 @@ func normalizeSettingValueByKey(key string, value map[string]interface{}) models
 		return normalizeAffiliateSettingMap(value)
 	case constants.SettingKeyTelegramBotConfig:
 		return normalizeTelegramBotConfig(models.JSON(value))
+	case constants.SettingKeyNavConfig:
+		return normalizeNavConfig(value)
 	case constants.SettingKeyRegistrationConfig:
 		return normalizeRegistrationSetting(value)
 	default:
@@ -342,6 +348,100 @@ func normalizeSiteTemplateMode(raw interface{}) string {
 }
 
 // normalizeRegistrationSetting 归一化注册配置。
+func normalizeNavConfig(value map[string]interface{}) models.JSON {
+	// builtin: blog / notice / about 开关，默认 true
+	builtin := map[string]interface{}{
+		"blog":   true,
+		"notice": true,
+		"about":  true,
+	}
+	if builtinRaw, ok := value["builtin"].(map[string]interface{}); ok {
+		for _, key := range []string{"blog", "notice", "about"} {
+			if raw, exists := builtinRaw[key]; exists {
+				builtin[key] = parseSettingBool(raw)
+			}
+		}
+	}
+
+	// custom_items: 自定义导航项
+	customItems := make([]interface{}, 0)
+	if itemsRaw, ok := value["custom_items"].([]interface{}); ok {
+		for _, itemRaw := range itemsRaw {
+			itemMap, ok := itemRaw.(map[string]interface{})
+			if !ok {
+				continue
+			}
+
+			title := normalizeSiteLocalizedField(itemMap["title"])
+			// 跳过全空标题项
+			allEmpty := true
+			for _, lang := range settingSupportedLanguages {
+				if s, _ := title[lang].(string); s != "" {
+					allEmpty = false
+					break
+				}
+			}
+			if allEmpty {
+				continue
+			}
+			// 截断标题长度
+			for _, lang := range settingSupportedLanguages {
+				if s, _ := title[lang].(string); s != "" {
+					title[lang] = normalizeSettingTextWithRuneLimit(s, settingNavCustomItemTitleMaxRuneSize)
+				}
+			}
+
+			linkType := normalizeSettingText(itemMap["link_type"])
+			if linkType != "internal" && linkType != "external" {
+				linkType = "internal"
+			}
+
+			target := normalizeSettingText(itemMap["target"])
+			if target != "_self" && target != "_blank" {
+				target = "_self"
+			}
+
+			url := normalizeSettingTextWithRuneLimit(itemMap["url"], settingNavCustomItemURLMaxRuneSize)
+
+			sortOrder := 0
+			if v, err := parseSettingInt(itemMap["sort_order"]); err == nil {
+				sortOrder = v
+			}
+
+			icon := normalizeSettingText(itemMap["icon"])
+			if icon == "" {
+				icon = "link"
+			}
+
+			// 保留前端生成的 id
+			id := float64(0)
+			if v, ok := itemMap["id"].(float64); ok {
+				id = v
+			}
+
+			customItems = append(customItems, map[string]interface{}{
+				"id":         id,
+				"title":      title,
+				"link_type":  linkType,
+				"url":        url,
+				"target":     target,
+				"sort_order": sortOrder,
+				"enabled":    parseSettingBool(itemMap["enabled"]),
+				"icon":       icon,
+			})
+
+			if len(customItems) >= settingNavCustomItemsMaxCount {
+				break
+			}
+		}
+	}
+
+	return models.JSON{
+		"builtin":      builtin,
+		"custom_items": customItems,
+	}
+}
+
 func normalizeRegistrationSetting(value map[string]interface{}) models.JSON {
 	normalized := make(models.JSON, 2)
 	registrationEnabled := true
