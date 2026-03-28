@@ -405,7 +405,7 @@ func (r *GormDashboardRepository) GetStockStats(lowStockThreshold int64) (Dashbo
 	// 按 product_id + sku_id 分组查询，仅统计启用 SKU 和 sku_id=0（遗留）的卡密
 	type countRow struct {
 		ProductID uint
-		SKUID     uint
+		SKUID     uint `gorm:"column:sku_id"`
 		Total     int64
 	}
 	var rows []countRow
@@ -495,7 +495,7 @@ func (r *GormDashboardRepository) GetInventoryAlertItems(lowStockThreshold int64
 	if len(autoProductIDs) > 0 {
 		type countRow struct {
 			ProductID uint
-			SKUID     uint
+			SKUID     uint `gorm:"column:sku_id"`
 			Total     int64
 		}
 		rows := make([]countRow, 0)
