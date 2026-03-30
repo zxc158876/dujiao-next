@@ -70,6 +70,25 @@ func (h *Handler) CreateTelegramBroadcast(c *gin.Context) {
 	response.Success(c, result)
 }
 
+// GetTelegramBroadcast 获取单条 Telegram 群发详情。
+func (h *Handler) GetTelegramBroadcast(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil || id == 0 {
+		shared.RespondError(c, response.CodeBadRequest, "error.bad_request", errors.New("invalid broadcast id"))
+		return
+	}
+	broadcast, err := h.TelegramBroadcastService.GetBroadcast(uint(id))
+	if err != nil {
+		shared.RespondError(c, response.CodeInternal, "error.bad_request", err)
+		return
+	}
+	if broadcast == nil {
+		shared.RespondError(c, response.CodeNotFound, "error.not_found", service.ErrTelegramBroadcastNotFound)
+		return
+	}
+	response.Success(c, broadcast)
+}
+
 // ListTelegramBroadcastUsers 获取 Telegram 广播可选用户。
 func (h *Handler) ListTelegramBroadcastUsers(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))

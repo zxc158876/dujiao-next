@@ -73,6 +73,11 @@ func NewTelegramBroadcastService(
 	}
 }
 
+// GetBroadcast 获取单条广播详情。
+func (s *TelegramBroadcastService) GetBroadcast(id uint) (*models.TelegramBroadcast, error) {
+	return s.repo.GetByID(id)
+}
+
 // ListBroadcasts 获取广播列表。
 func (s *TelegramBroadcastService) ListBroadcasts(input TelegramBroadcastListInput) ([]models.TelegramBroadcast, int64, error) {
 	return s.repo.List(repository.TelegramBroadcastListFilter{

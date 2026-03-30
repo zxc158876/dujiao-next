@@ -446,6 +446,7 @@ func SetupRouter(cfg *config.Config, c *provider.Container) *gin.Engine {
 
 				// Telegram Bot 群发
 				authorized.GET("/telegram-bot/broadcasts", adminHandler.ListTelegramBroadcasts)
+				authorized.GET("/telegram-bot/broadcasts/:id", adminHandler.GetTelegramBroadcast)
 				authorized.POST("/telegram-bot/broadcasts", adminHandler.CreateTelegramBroadcast)
 				authorized.GET("/telegram-bot/users", adminHandler.ListTelegramBroadcastUsers)
 
