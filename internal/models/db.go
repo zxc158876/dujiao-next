@@ -45,7 +45,8 @@ func InitDB(driver, dsn string, pool DBPoolConfig) error {
 		return fmt.Errorf("unsupported database driver: %s", driver)
 	}
 	DB, err = gorm.Open(dialector, &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info),
+		Logger:  logger.Default.LogMode(logger.Info),
+		NowFunc: func() time.Time { return time.Now().UTC() },
 	})
 	if err != nil {
 		return err
