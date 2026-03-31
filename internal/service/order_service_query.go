@@ -91,6 +91,7 @@ func (s *OrderService) GetOrderByUserOrderNo(orderNo string, userID uint) (*mode
 
 // GetOrderByGuest 获取游客订单详情
 func (s *OrderService) GetOrderByGuest(orderID uint, email, password string) (*models.Order, error) {
+	email = strings.ToLower(strings.TrimSpace(email))
 	order, err := s.orderRepo.GetByIDAndGuest(orderID, email, password)
 	if err != nil {
 		return nil, ErrOrderFetchFailed
@@ -107,6 +108,7 @@ func (s *OrderService) GetOrderByGuest(orderID uint, email, password string) (*m
 
 // GetOrderByGuestOrderNo 获取游客订单详情（按订单号）
 func (s *OrderService) GetOrderByGuestOrderNo(orderNo, email, password string) (*models.Order, error) {
+	email = strings.ToLower(strings.TrimSpace(email))
 	order, err := s.orderRepo.GetByOrderNoAndGuest(orderNo, email, password)
 	if err != nil {
 		return nil, ErrOrderFetchFailed
@@ -139,6 +141,7 @@ func (s *OrderService) ListOrdersByUser(filter repository.OrderListFilter) ([]mo
 
 // ListOrdersByGuest 获取游客订单列表
 func (s *OrderService) ListOrdersByGuest(email, password string, page, pageSize int) ([]models.Order, int64, error) {
+	email = strings.ToLower(strings.TrimSpace(email))
 	orders, total, err := s.orderRepo.ListByGuest(email, password, page, pageSize)
 	if err != nil {
 		return nil, 0, ErrOrderFetchFailed
