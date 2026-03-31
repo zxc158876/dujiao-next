@@ -62,6 +62,7 @@ var channelPaymentCreateErrorRules = []mappedChannelError{
 	{target: service.ErrPaymentGatewayRequestFailed, httpCode: http.StatusBadRequest, code: response.CodeBadRequest, errorCode: "payment_create_failed", key: "error.payment_gateway_request_failed"},
 	{target: service.ErrPaymentGatewayResponseInvalid, httpCode: http.StatusBadRequest, code: response.CodeBadRequest, errorCode: "payment_create_failed", key: "error.payment_gateway_response_invalid"},
 	{target: service.ErrPaymentCurrencyMismatch, httpCode: http.StatusBadRequest, code: response.CodeBadRequest, errorCode: "payment_create_failed", key: "error.payment_currency_mismatch"},
+	{target: service.ErrWalletOnlyPaymentRequired, httpCode: http.StatusBadRequest, code: response.CodeBadRequest, errorCode: "wallet_only_payment_required", key: "error.wallet_only_payment_required"},
 }
 
 func respondChannelSuccess(c *gin.Context, data interface{}) {

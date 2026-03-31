@@ -388,7 +388,8 @@ const (
 
 	SettingKeyNavConfig = "nav_config"
 
-	SettingKeyWalletConfig = "wallet_config"
+	SettingKeyWalletConfig        = "wallet_config"
+	SettingFieldWalletOnlyPayment = "wallet_only_payment"
 
 	SettingKeyRegistrationConfig         = "registration_config"
 	SettingFieldRegistrationEnabled      = "registration_enabled"

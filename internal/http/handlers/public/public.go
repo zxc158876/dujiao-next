@@ -153,11 +153,14 @@ func (h *Handler) GetConfig(c *gin.Context) {
 	}
 	data["payment_channels"] = publicChannels
 
-	// 钱包充值支付渠道限制
+	// 钱包相关配置
 	if h.SettingService != nil {
 		walletRechargeChannelIDs := h.SettingService.GetWalletRechargeChannelIDs()
 		if len(walletRechargeChannelIDs) > 0 {
 			data["wallet_recharge_channel_ids"] = walletRechargeChannelIDs
+		}
+		if h.SettingService.GetWalletOnlyPayment() {
+			data["wallet_only_payment"] = true
 		}
 	}
 

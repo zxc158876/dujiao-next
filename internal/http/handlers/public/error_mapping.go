@@ -126,6 +126,7 @@ var paymentCreateErrorRules = []mappedHandlerError{
 	{target: service.ErrWalletNotSupportedForGuest, code: response.CodeBadRequest, key: "error.payment_invalid"},
 	{target: service.ErrPaymentChannelNotAllowedForProduct, code: response.CodeBadRequest, key: "error.payment_channel_not_allowed_for_product"},
 	{target: service.ErrPaymentChannelNotAllowedForRecharge, code: response.CodeBadRequest, key: "error.payment_channel_not_allowed_for_recharge"},
+	{target: service.ErrWalletOnlyPaymentRequired, code: response.CodeBadRequest, key: "error.wallet_only_payment_required"},
 }
 
 var paymentCaptureErrorRules = []mappedHandlerError{

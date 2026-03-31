@@ -162,4 +162,5 @@ var (
 	ErrOrderEmailTemplateConfigInvalid     = errors.New("order email template config invalid")
 	ErrPaymentChannelNotAllowedForProduct  = errors.New("payment channel not allowed for product")
 	ErrPaymentChannelNotAllowedForRecharge = errors.New("payment channel not allowed for wallet recharge")
+	ErrWalletOnlyPaymentRequired           = errors.New("wallet only payment required")
 )

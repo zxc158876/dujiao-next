@@ -144,6 +144,22 @@ func (s *SettingService) GetSiteCurrency(defaultValue string) (string, error) {
 	return normalizeSiteCurrency(raw), nil
 }
 
+// GetWalletOnlyPayment 获取是否仅允许钱包余额支付
+func (s *SettingService) GetWalletOnlyPayment() bool {
+	if s == nil {
+		return false
+	}
+	value, err := s.GetByKey(constants.SettingKeyWalletConfig)
+	if err != nil || value == nil {
+		return false
+	}
+	raw, ok := value[constants.SettingFieldWalletOnlyPayment]
+	if !ok {
+		return false
+	}
+	return parseSettingBool(raw)
+}
+
 // GetWalletRechargeChannelIDs 获取钱包充值允许的支付渠道ID列表
 func (s *SettingService) GetWalletRechargeChannelIDs() []uint {
 	if s == nil {
