@@ -21,11 +21,12 @@ import (
 
 // UpdateAdminUserRequest 管理员更新用户请求
 type UpdateAdminUserRequest struct {
-	Nickname *string `json:"nickname"`
-	Locale   *string `json:"locale"`
-	Status   *string `json:"status"`
-	Email    *string `json:"email"`
-	Password *string `json:"password"`
+	Nickname  *string `json:"nickname"`
+	Locale    *string `json:"locale"`
+	Status    *string `json:"status"`
+	Email     *string `json:"email"`
+	Password  *string `json:"password"`
+	AdminNote *string `json:"admin_note"`
 }
 
 // BatchUpdateUserStatusRequest 批量更新用户状态请求
@@ -281,6 +282,11 @@ func (h *Handler) UpdateAdminUser(c *gin.Context) {
 				revokeToken = true
 			}
 		}
+	}
+
+	if req.AdminNote != nil {
+		user.AdminNote = *req.AdminNote
+		updated = true
 	}
 
 	if !updated {

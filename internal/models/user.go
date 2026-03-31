@@ -18,6 +18,7 @@ type User struct {
 	MemberLevelID         uint           `gorm:"not null;default:0" json:"member_level_id"`                    // 当前会员等级ID
 	TotalRecharged        Money          `gorm:"type:decimal(20,2);not null;default:0" json:"total_recharged"` // 充值累计
 	TotalSpent            Money          `gorm:"type:decimal(20,2);not null;default:0" json:"total_spent"`     // 消费累计
+	AdminNote             string         `gorm:"type:text;default:''" json:"admin_note,omitempty"`             // 管理员备注（仅后台可见）
 	TokenVersion          uint64         `gorm:"not null;default:0" json:"-"`                                  // Token 版本（用于全量失效）
 	TokenInvalidBefore    *time.Time     `gorm:"index" json:"-"`                                               // 该时间点前签发的 Token 失效
 	EmailVerifiedAt       *time.Time     `json:"email_verified_at"`                                            // 邮箱验证时间
