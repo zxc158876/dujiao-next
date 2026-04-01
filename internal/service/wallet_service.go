@@ -93,6 +93,20 @@ func (s *WalletService) ListRechargeOrdersAdmin(filter repository.WalletRecharge
 	return s.walletRepo.ListRechargeOrdersAdmin(filter)
 }
 
+// ListUserRechargeOrders 用户端查询自己的充值订单
+func (s *WalletService) ListUserRechargeOrders(userID uint, page, pageSize int, status, rechargeNo string) ([]models.WalletRechargeOrder, int64, error) {
+	if userID == 0 {
+		return nil, 0, ErrWalletAccountNotFound
+	}
+	return s.walletRepo.ListRechargeOrdersAdmin(repository.WalletRechargeListFilter{
+		Page:       page,
+		PageSize:   pageSize,
+		UserID:     userID,
+		Status:     status,
+		RechargeNo: rechargeNo,
+	})
+}
+
 // GetRechargeOrderByRechargeNo 按充值单号查询当前用户充值单
 func (s *WalletService) GetRechargeOrderByRechargeNo(userID uint, rechargeNo string) (*models.WalletRechargeOrder, error) {
 	if userID == 0 {

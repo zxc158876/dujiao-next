@@ -58,6 +58,7 @@ type WalletRechargeResp struct {
 	RechargeNo    string       `json:"recharge_no"`
 	Amount        models.Money `json:"amount"`
 	PayableAmount models.Money `json:"payable_amount"`
+	FeeRate       models.Money `json:"fee_rate"`
 	FeeAmount     models.Money `json:"fee_amount"`
 	Currency      string       `json:"currency"`
 	Status        string       `json:"status"`
@@ -73,6 +74,7 @@ func NewWalletRechargeResp(r *models.WalletRechargeOrder) WalletRechargeResp {
 		RechargeNo:    r.RechargeNo,
 		Amount:        r.Amount,
 		PayableAmount: r.PayableAmount,
+		FeeRate:       r.FeeRate,
 		FeeAmount:     r.FeeAmount,
 		Currency:      r.Currency,
 		Status:        r.Status,
@@ -80,7 +82,16 @@ func NewWalletRechargeResp(r *models.WalletRechargeOrder) WalletRechargeResp {
 		PaidAt:        r.PaidAt,
 		CreatedAt:     r.CreatedAt,
 	}
-	// 排除：UserID、PaymentID、ChannelID、ProviderType、ChannelType、InteractionMode、FeeRate、UpdatedAt
+	// 排除：UserID、PaymentID、ChannelID、ProviderType、ChannelType、InteractionMode、UpdatedAt
+}
+
+// NewWalletRechargeRespList 批量转换钱包充值单
+func NewWalletRechargeRespList(orders []models.WalletRechargeOrder) []WalletRechargeResp {
+	result := make([]WalletRechargeResp, 0, len(orders))
+	for i := range orders {
+		result = append(result, NewWalletRechargeResp(&orders[i]))
+	}
+	return result
 }
 
 // WalletRechargePaymentPayload 钱包充值支付响应载荷

@@ -211,6 +211,15 @@ func (s *PaymentService) CreatePayment(input CreatePaymentInput) (*CreatePayment
 	orderPaidByWallet := false
 	now := time.Now()
 
+	// 在事务外查询设置，避免 SQLite 单连接池下自锁
+	walletOnly := s.settingService != nil && s.settingService.GetWalletOnlyPayment()
+	if walletOnly {
+		input.UseBalance = true
+		if input.ChannelID != 0 {
+			return nil, ErrWalletOnlyPaymentRequired
+		}
+	}
+
 	err := s.paymentRepo.Transaction(func(tx *gorm.DB) error {
 		var lockedOrder models.Order
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
@@ -231,15 +240,6 @@ func (s *PaymentService) CreatePayment(input CreatePaymentInput) (*CreatePayment
 		}
 		if lockedOrder.ExpiresAt != nil && !lockedOrder.ExpiresAt.After(time.Now()) {
 			return ErrOrderStatusInvalid
-		}
-
-		// 检查是否开启了仅钱包余额支付模式
-		walletOnly := s.settingService != nil && s.settingService.GetWalletOnlyPayment()
-		if walletOnly {
-			input.UseBalance = true
-			if input.ChannelID != 0 {
-				return ErrWalletOnlyPaymentRequired
-			}
 		}
 
 		paymentRepo := s.paymentRepo.WithTx(tx)

@@ -143,6 +143,7 @@ func SetupRouter(cfg *config.Config, c *provider.Container) *gin.Engine {
 			user.GET("/wallet", publicHandler.GetMyWallet)
 			user.GET("/wallet/transactions", publicHandler.GetMyWalletTransactions)
 			user.POST("/wallet/recharge", publicHandler.RechargeWallet)
+			user.GET("/wallet/recharges", publicHandler.ListMyWalletRecharges)
 			user.GET("/wallet/recharges/:recharge_no", publicHandler.GetMyWalletRecharge)
 			user.POST("/wallet/recharge/payments/:id/capture", publicHandler.CaptureMyWalletRechargePayment)
 			user.POST("/gift-cards/redeem", publicHandler.RedeemGiftCard)
