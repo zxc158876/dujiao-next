@@ -12,6 +12,7 @@ import (
 type CartRepository interface {
 	ListByUser(userID uint) ([]models.CartItem, error)
 	Upsert(item *models.CartItem) error
+	DeleteByProduct(productID uint) error
 	DeleteByUserAndProduct(userID, productID uint) error
 	DeleteByUserProductSKU(userID, productID, skuID uint) error
 	ClearByUser(userID uint) error
@@ -65,6 +66,11 @@ func (r *GormCartRepository) Upsert(item *models.CartItem) error {
 		"updated_at":       item.UpdatedAt,
 	}
 	return r.db.Model(&existing).Updates(updates).Error
+}
+
+// DeleteByProduct 删除指定商品的所有购物车项
+func (r *GormCartRepository) DeleteByProduct(productID uint) error {
+	return r.db.Where("product_id = ?", productID).Delete(&models.CartItem{}).Error
 }
 
 // DeleteByUserAndProduct 删除购物车项

@@ -14,19 +14,33 @@ import (
 
 // ProductService 商品业务服务
 type ProductService struct {
-	repo           repository.ProductRepository
-	productSKURepo repository.ProductSKURepository
-	cardSecretRepo repository.CardSecretRepository
-	categoryRepo   repository.CategoryRepository
+	repo                 repository.ProductRepository
+	productSKURepo       repository.ProductSKURepository
+	cardSecretRepo       repository.CardSecretRepository
+	categoryRepo         repository.CategoryRepository
+	memberLevelPriceRepo repository.MemberLevelPriceRepository
+	cartRepo             repository.CartRepository
+	productMappingRepo   repository.ProductMappingRepository
 }
 
 // NewProductService 创建商品服务
-func NewProductService(repo repository.ProductRepository, productSKURepo repository.ProductSKURepository, cardSecretRepo repository.CardSecretRepository, categoryRepo repository.CategoryRepository) *ProductService {
+func NewProductService(
+	repo repository.ProductRepository,
+	productSKURepo repository.ProductSKURepository,
+	cardSecretRepo repository.CardSecretRepository,
+	categoryRepo repository.CategoryRepository,
+	memberLevelPriceRepo repository.MemberLevelPriceRepository,
+	cartRepo repository.CartRepository,
+	productMappingRepo repository.ProductMappingRepository,
+) *ProductService {
 	return &ProductService{
-		repo:           repo,
-		productSKURepo: productSKURepo,
-		cardSecretRepo: cardSecretRepo,
-		categoryRepo:   categoryRepo,
+		repo:                 repo,
+		productSKURepo:       productSKURepo,
+		cardSecretRepo:       cardSecretRepo,
+		categoryRepo:         categoryRepo,
+		memberLevelPriceRepo: memberLevelPriceRepo,
+		cartRepo:             cartRepo,
+		productMappingRepo:   productMappingRepo,
 	}
 }
 
@@ -852,7 +866,21 @@ func (s *ProductService) Delete(id string) error {
 	if product == nil {
 		return ErrNotFound
 	}
-	return s.repo.Delete(id)
+	return s.repo.Transaction(func(tx *gorm.DB) error {
+		if err := s.productSKURepo.WithTx(tx).DeleteByProduct(product.ID); err != nil {
+			return err
+		}
+		if err := s.memberLevelPriceRepo.WithTx(tx).DeleteByProduct(product.ID); err != nil {
+			return err
+		}
+		if err := s.cartRepo.WithTx(tx).DeleteByProduct(product.ID); err != nil {
+			return err
+		}
+		if err := s.productMappingRepo.WithTx(tx).DeleteByLocalProduct(product.ID); err != nil {
+			return err
+		}
+		return s.repo.WithTx(tx).Delete(id)
+	})
 }
 
 // QuickUpdate 快速更新商品部分字段（如 is_active、sort_order）

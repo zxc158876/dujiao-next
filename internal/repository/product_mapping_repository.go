@@ -17,6 +17,7 @@ type ProductMappingRepository interface {
 	Create(mapping *models.ProductMapping) error
 	Update(mapping *models.ProductMapping) error
 	Delete(id uint) error
+	DeleteByLocalProduct(productID uint) error
 	List(filter ProductMappingListFilter) ([]models.ProductMapping, int64, error)
 	ListActiveByConnection(connectionID uint) ([]models.ProductMapping, error)
 	ListAllActive() ([]models.ProductMapping, error)
@@ -86,6 +87,17 @@ func (r *GormProductMappingRepository) Update(mapping *models.ProductMapping) er
 
 func (r *GormProductMappingRepository) Delete(id uint) error {
 	return r.db.Delete(&models.ProductMapping{}, id).Error
+}
+
+// DeleteByLocalProduct 删除指定本地商品的所有映射及其 SKU 映射
+func (r *GormProductMappingRepository) DeleteByLocalProduct(productID uint) error {
+	// 先删除关联的 SKU 映射
+	if err := r.db.Where("product_mapping_id IN (?)",
+		r.db.Model(&models.ProductMapping{}).Select("id").Where("local_product_id = ?", productID),
+	).Delete(&models.SKUMapping{}).Error; err != nil {
+		return err
+	}
+	return r.db.Where("local_product_id = ?", productID).Delete(&models.ProductMapping{}).Error
 }
 
 func (r *GormProductMappingRepository) List(filter ProductMappingListFilter) ([]models.ProductMapping, int64, error) {

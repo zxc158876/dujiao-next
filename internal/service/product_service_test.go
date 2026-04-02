@@ -272,7 +272,7 @@ func newAutoStockProductService(t *testing.T) (*ProductService, *gorm.DB) {
 		t.Fatalf("auto migrate card secret failed: %v", err)
 	}
 	secretRepo := repository.NewCardSecretRepository(db)
-	return NewProductService(nil, nil, secretRepo, nil), db
+	return NewProductService(nil, nil, secretRepo, nil, nil, nil, nil), db
 }
 
 func insertCardSecrets(t *testing.T, db *gorm.DB, productID, skuID uint, status string, count int) {
@@ -699,7 +699,7 @@ func newProductServiceForTest(t *testing.T) (*ProductService, *gorm.DB) {
 	if err != nil {
 		t.Fatalf("open sqlite failed: %v", err)
 	}
-	if err := db.AutoMigrate(&models.Category{}, &models.Product{}, &models.ProductSKU{}, &models.CardSecret{}); err != nil {
+	if err := db.AutoMigrate(&models.Category{}, &models.Product{}, &models.ProductSKU{}, &models.CardSecret{}, &models.MemberLevelPrice{}, &models.CartItem{}, &models.ProductMapping{}, &models.SKUMapping{}); err != nil {
 		t.Fatalf("auto migrate product service tables failed: %v", err)
 	}
 
@@ -708,5 +708,129 @@ func newProductServiceForTest(t *testing.T) (*ProductService, *gorm.DB) {
 		repository.NewProductSKURepository(db),
 		repository.NewCardSecretRepository(db),
 		repository.NewCategoryRepository(db),
+		repository.NewMemberLevelPriceRepository(db),
+		repository.NewCartRepository(db),
+		repository.NewProductMappingRepository(db),
 	), db
+}
+
+func TestProductServiceDeleteCascade(t *testing.T) {
+	svc, db := newProductServiceForTest(t)
+
+	// 创建分类
+	cat := models.Category{Slug: "test-cat", NameJSON: models.JSON{"zh-CN": "test"}}
+	if err := db.Create(&cat).Error; err != nil {
+		t.Fatalf("create category: %v", err)
+	}
+
+	// 创建商品
+	product := models.Product{
+		CategoryID:      cat.ID,
+		Slug:            "test-product",
+		TitleJSON:       models.JSON{"zh-CN": "test-product"},
+		PriceAmount:     models.NewMoneyFromDecimal(decimal.NewFromInt(10)),
+		FulfillmentType: constants.FulfillmentTypeManual,
+		IsActive:        true,
+	}
+	if err := db.Create(&product).Error; err != nil {
+		t.Fatalf("create product: %v", err)
+	}
+	productID := strconv.FormatUint(uint64(product.ID), 10)
+
+	// 创建关联 SKU
+	sku := models.ProductSKU{
+		ProductID:   product.ID,
+		SKUCode:     "DEFAULT",
+		PriceAmount: models.NewMoneyFromDecimal(decimal.NewFromInt(10)),
+		IsActive:    true,
+	}
+	if err := db.Create(&sku).Error; err != nil {
+		t.Fatalf("create sku: %v", err)
+	}
+
+	// 创建会员等级价格
+	mlp := models.MemberLevelPrice{
+		ProductID:     product.ID,
+		SKUID:         sku.ID,
+		MemberLevelID: 1,
+		PriceAmount:   models.NewMoneyFromDecimal(decimal.NewFromInt(8)),
+	}
+	if err := db.Create(&mlp).Error; err != nil {
+		t.Fatalf("create member level price: %v", err)
+	}
+
+	// 创建购物车项
+	cart := models.CartItem{
+		UserID:          1,
+		ProductID:       product.ID,
+		SKUID:           sku.ID,
+		Quantity:        1,
+		FulfillmentType: constants.FulfillmentTypeManual,
+	}
+	if err := db.Create(&cart).Error; err != nil {
+		t.Fatalf("create cart item: %v", err)
+	}
+
+	// 创建商品映射
+	pm := models.ProductMapping{
+		ConnectionID:      1,
+		LocalProductID:    product.ID,
+		UpstreamProductID: 100,
+	}
+	if err := db.Create(&pm).Error; err != nil {
+		t.Fatalf("create product mapping: %v", err)
+	}
+
+	// 创建 SKU 映射
+	sm := models.SKUMapping{
+		ProductMappingID: pm.ID,
+		LocalSKUID:       sku.ID,
+		UpstreamSKUID:    200,
+	}
+	if err := db.Create(&sm).Error; err != nil {
+		t.Fatalf("create sku mapping: %v", err)
+	}
+
+	// 执行删除
+	if err := svc.Delete(productID); err != nil {
+		t.Fatalf("delete product: %v", err)
+	}
+
+	// 验证所有关联数据已被软删除
+	var skuCount int64
+	db.Model(&models.ProductSKU{}).Where("product_id = ?", product.ID).Count(&skuCount)
+	if skuCount != 0 {
+		t.Errorf("expected 0 SKUs after delete, got %d", skuCount)
+	}
+
+	var mlpCount int64
+	db.Model(&models.MemberLevelPrice{}).Where("product_id = ?", product.ID).Count(&mlpCount)
+	if mlpCount != 0 {
+		t.Errorf("expected 0 member level prices after delete, got %d", mlpCount)
+	}
+
+	var cartCount int64
+	db.Model(&models.CartItem{}).Where("product_id = ?", product.ID).Count(&cartCount)
+	if cartCount != 0 {
+		t.Errorf("expected 0 cart items after delete, got %d", cartCount)
+	}
+
+	var pmCount int64
+	db.Model(&models.ProductMapping{}).Where("local_product_id = ?", product.ID).Count(&pmCount)
+	if pmCount != 0 {
+		t.Errorf("expected 0 product mappings after delete, got %d", pmCount)
+	}
+
+	var smCount int64
+	db.Model(&models.SKUMapping{}).Where("product_mapping_id = ?", pm.ID).Count(&smCount)
+	if smCount != 0 {
+		t.Errorf("expected 0 SKU mappings after delete, got %d", smCount)
+	}
+
+	// 验证商品本身已被软删除
+	var productCount int64
+	db.Model(&models.Product{}).Where("id = ?", product.ID).Count(&productCount)
+	if productCount != 0 {
+		t.Errorf("expected product to be soft-deleted, but still found %d", productCount)
+	}
 }
