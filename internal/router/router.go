@@ -444,6 +444,7 @@ func SetupRouter(cfg *config.Config, c *provider.Container) *gin.Engine {
 
 				// 采购单管理
 				authorized.GET("/procurement-orders", adminHandler.GetProcurementOrders)
+				authorized.GET("/procurement-orders/stats", adminHandler.GetProcurementOrderStats)
 				authorized.GET("/procurement-orders/:id", adminHandler.GetProcurementOrder)
 				authorized.GET("/procurement-orders/:id/upstream-payload/download", adminHandler.DownloadProcurementUpstreamPayload)
 				authorized.POST("/procurement-orders/:id/retry", adminHandler.RetryProcurementOrder)
